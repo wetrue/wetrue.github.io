@@ -1,0 +1,254 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PHP实现百万数据导出 | 猿星球</title>
+<link rel="shortcut icon" href="https://wetrue.github.io/favicon.ico?v=1698033326814">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://wetrue.github.io/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="PHP实现百万数据导出 | 猿星球 - Atom Feed" href="https://wetrue.github.io/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+
+
+
+    <meta name="description" content="导出思路
+
+需要考虑服务器内存
+需要考虑程序运行的最大时间
+缺少BOM头导致乱码的处理
+如果导出数量过大，推荐使用循环导出，每次循环这里以导出一万条为例，循环100次即可全部导出
+
+&lt;?php
+    //让程序一直运行
+    se..." />
+    <meta name="keywords" content="PHP" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://wetrue.github.io">
+  <img class="avatar" src="https://wetrue.github.io/images/avatar.png?v=1698033326814" alt="">
+  </a>
+  <h1 class="site-title">
+    猿星球
+  </h1>
+  <p class="site-description">
+    一个记录与分享技术的个人博客
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              PHP实现百万数据导出
+            </h2>
+            <div class="post-info">
+              <span>
+                2023-10-21
+              </span>
+              <span>
+                2 min read
+              </span>
+              
+                <a href="https://wetrue.github.io/tag/1LCzNyW66/" class="post-tag">
+                  # PHP
+                </a>
+              
+            </div>
+            
+            <div class="post-content-wrapper">
+              <div class="post-content" v-pre>
+                <h3 id="导出思路">导出思路</h3>
+<ul>
+<li>需要考虑服务器内存</li>
+<li>需要考虑程序运行的最大时间</li>
+<li>缺少BOM头导致乱码的处理</li>
+<li>如果导出数量过大，推荐使用循环导出，每次循环这里以导出一万条为例，循环100次即可全部导出</li>
+</ul>
+<pre><code class="language-php">&lt;?php
+    //让程序一直运行
+    set_time_limit(0);
+    //设置程序运行内存
+    ini_set('memory_limit', '128M');
+
+    $fileName = '测试导出数据';
+    header('Content-Encoding: UTF-8');
+    header(&quot;Content-type:application/vnd.ms-excel;charset=UTF-8&quot;);
+    header('Content-Disposition: attachment;filename=&quot;' . $fileName . '.csv&quot;');
+
+    //打开php标准输出流
+    $fp = fopen('php://output', 'a');
+
+    //添加BOM头，以UTF8编码导出CSV文件，如果文件头未添加BOM头，打开会出现乱码。
+    fwrite($fp, chr(0xEF).chr(0xBB).chr(0xBF));
+    //添加导出标题
+    fputcsv($fp, ['姓名', '年龄', '地区']);
+
+    //链接数据库
+    $dsn = &quot;mysql:host=127.0.0.1;port=3306;dbname=demo;charset=utf8&quot;;
+    $pdo = new PDO($dsn, 'root', '');
+
+    $step = 100; //循环次数
+    $nums = 10000; //每次导出数量
+
+    for($i = 0; $i &lt; $step; $i++) {
+        $start = $i * $nums;
+        $sql = &quot;SELECT uname,age,city FROM `hd_test` ORDER BY `id` LIMIT {$start},{$nums}&quot;;
+        $pdostatement = $pdo-&gt;query($sql);
+        $result = $pdostatement-&gt;fetchAll(PDO::FETCH_ASSOC);
+        foreach ($result as $item) {
+            fputcsv($fp, $item);
+        }
+        //每1万条数据就刷新缓冲区
+        ob_flush();
+        flush();
+    }
+</code></pre>
+<ul>
+<li>如果导出的字段是数字，并且不希望被格式化，可以在导出的时候加上 <code>&quot;\t&quot;</code></li>
+</ul>
+
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#%E5%AF%BC%E5%87%BA%E6%80%9D%E8%B7%AF">导出思路</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+              </div>
+            </div>
+          </article>
+        </div>
+
+        
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '07bdc27a15bb95feab32',
+    clientSecret: '922172998f715aa6474219ec019d5405e54be229',
+    repo: 'BlogComment',
+    owner: 'wetrue',
+    admin: ['wetrue'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+        
+
+        <div class="site-footer">
+  Powered by Heyufeng
+  <a class="rss" href="https://wetrue.github.io/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
+      </div>
+    </div>
+
+    <script>
+      hljs.initHighlightingOnLoad()
+
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
+
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
+
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
+
+    </script>
+  </body>
+</html>

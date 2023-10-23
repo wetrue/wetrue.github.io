@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://wetrue.github.io</id>
+    <title>猿星球</title>
+    <updated>2023-10-23T03:55:42.440Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://wetrue.github.io"/>
+    <link rel="self" href="https://wetrue.github.io/atom.xml"/>
+    <subtitle>一个记录与分享技术的个人博客</subtitle>
+    <logo>https://wetrue.github.io/images/avatar.png</logo>
+    <icon>https://wetrue.github.io/favicon.ico</icon>
+    <rights>All rights reserved 2023, 猿星球</rights>
+    <entry>
+        <title type="html"><![CDATA[PHP实现百万数据导出]]></title>
+        <id>https://wetrue.github.io/post/php-export-million-data/</id>
+        <link href="https://wetrue.github.io/post/php-export-million-data/">
+        </link>
+        <updated>2023-10-21T09:15:19.000Z</updated>
+        <content type="html"><![CDATA[<h3 id="导出思路">导出思路</h3>
+<ul>
+<li>需要考虑服务器内存</li>
+<li>需要考虑程序运行的最大时间</li>
+<li>缺少BOM头导致乱码的处理</li>
+<li>如果导出数量过大，推荐使用循环导出，每次循环这里以导出一万条为例，循环100次即可全部导出</li>
+</ul>
+<pre><code class="language-php">&lt;?php
+    //让程序一直运行
+    set_time_limit(0);
+    //设置程序运行内存
+    ini_set('memory_limit', '128M');
+
+    $fileName = '测试导出数据';
+    header('Content-Encoding: UTF-8');
+    header(&quot;Content-type:application/vnd.ms-excel;charset=UTF-8&quot;);
+    header('Content-Disposition: attachment;filename=&quot;' . $fileName . '.csv&quot;');
+
+    //打开php标准输出流
+    $fp = fopen('php://output', 'a');
+
+    //添加BOM头，以UTF8编码导出CSV文件，如果文件头未添加BOM头，打开会出现乱码。
+    fwrite($fp, chr(0xEF).chr(0xBB).chr(0xBF));
+    //添加导出标题
+    fputcsv($fp, ['姓名', '年龄', '地区']);
+
+    //链接数据库
+    $dsn = &quot;mysql:host=127.0.0.1;port=3306;dbname=demo;charset=utf8&quot;;
+    $pdo = new PDO($dsn, 'root', '');
+
+    $step = 100; //循环次数
+    $nums = 10000; //每次导出数量
+
+    for($i = 0; $i &lt; $step; $i++) {
+        $start = $i * $nums;
+        $sql = &quot;SELECT uname,age,city FROM `hd_test` ORDER BY `id` LIMIT {$start},{$nums}&quot;;
+        $pdostatement = $pdo-&gt;query($sql);
+        $result = $pdostatement-&gt;fetchAll(PDO::FETCH_ASSOC);
+        foreach ($result as $item) {
+            fputcsv($fp, $item);
+        }
+        //每1万条数据就刷新缓冲区
+        ob_flush();
+        flush();
+    }
+</code></pre>
+<ul>
+<li>如果导出的字段是数字，并且不希望被格式化，可以在导出的时候加上 <code>&quot;\t&quot;</code></li>
+</ul>
+]]></content>
+    </entry>
+</feed>
